@@ -22,6 +22,11 @@ import mysql.connector
 from mysql.connector import Error
 import bcrypt
 from openai import OpenAI
+from fastapi import FastAPI, WebSocket
+from typing import List
+from fastapi import WebSocket
+
+connected_clients: List[WebSocket] = []
 
 # ----------------------------
 # Cargar .env
@@ -372,4 +377,73 @@ def obtener_perfil(correo: str):
     finally:
         cursor.close()
         conn.close()
+
 # ----------------------------
+# ⚡ WebSocket con mensajes JSON y guardado en BD
+# ----------------------------
+from typing import List, Dict
+from fastapi import WebSocket, WebSocketDisconnect
+
+# Lista de clientes conectados (cada uno con su WebSocket y nombre/correo)
+connected_clients: List[Dict] = []
+
+@app.websocket("/ws/{usuario}")
+async def websocket_endpoint(websocket: WebSocket, usuario: str):
+    """
+    WebSocket que maneja chat en tiempo real.
+    Cada usuario se identifica con su nombre o correo en la URL.
+    Ejemplo: ws://127.0.0.1:8000/ws/ash@pokedex.com
+    """
+    await websocket.accept()
+    connected_clients.append({"socket": websocket, "usuario": usuario})
+    print(f"⚡ Usuario conectado: {usuario}")
+
+    # Enviar mensaje de bienvenida (en formato JSON)
+    await websocket.send_json({
+        "user": "Sistema",
+        "text": f"Bienvenido {usuario}! 🧢"
+    })
+
+    try:
+        while True:
+            # Esperar mensaje entrante del cliente
+            data = await websocket.receive_json()
+            mensaje_texto = data.get("text", "").strip()
+
+            if not mensaje_texto:
+                continue
+
+            print(f"📨 {usuario}: {mensaje_texto}")
+
+            # Guardar mensaje en la base de datos
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                cursor.execute(
+                    "INSERT INTO mensajes (usuario, contenido) VALUES (%s, %s)",
+                    (usuario, mensaje_texto),
+                )
+                conn.commit()
+                cursor.close()
+                conn.close()
+            except Exception as db_err:
+                print(f"⚠️ Error al guardar mensaje en la BD: {db_err}")
+
+            # Reenviar el mensaje a todos los clientes conectados
+            for client in connected_clients:
+                await client["socket"].send_json({
+                "usuario": usuario,        # <--- Corregido para coincidir con el frontend
+                "texto": mensaje_texto     # <--- Corregido para coincidir con el frontend
+                })
+
+    except WebSocketDisconnect:
+        print(f"❌ Usuario desconectado: {usuario}")
+        connected_clients[:] = [
+            c for c in connected_clients if c["socket"] != websocket
+        ]
+
+    except Exception as e:
+        print(f"⚠️ Error en WebSocket ({usuario}): {e}")
+        connected_clients[:] = [
+            c for c in connected_clients if c["socket"] != websocket
+        ]

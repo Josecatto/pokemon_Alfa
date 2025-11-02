@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat Pokémon - Pokédex Navia y Aldana</title>
+
+    <link rel="stylesheet" href="css/styles.css">
+ <script src="https://kit.fontawesome.com/a2d9b2d6c4.js" crossorigin="anonymous"></script>
+</head>
+
+<body class="profile-page">
+<header>
+    <h1>💬 Chat Pokémon</h1>
+</header>
+
+<nav class="perfil-nav">
+    <a href="index.html" class="btn">Catálogo</a>
+    <a href="perfil.html" class="btn">Perfil</a>
+</nav>
+
+<main class="profile-container">
+    <section class="chat-box" id="chatBox">
+    <h2 style="text-align:center; color:#c084fc;">Entrenadores Pokémon</h2>
+
+    <div id="chat" class="chat-messages" 
+        style="flex:1; overflow-y:auto; max-height:400px; margin:15px 0; padding:10px;">
+        <p style="text-align:center; color:#999;">Cargando chat...</p>
+    </div>
+
+    <div class="chat-input">
+    <input id="mensaje" type="text" placeholder="Escribe tu mensaje..." />
+    <button id="enviarBtn">Enviar</button>
+</div>
+</section>
+</main>
+
+    <footer>
+        <p>Pokédex Navia y Aldana © 2025</p>
+    </footer>
+
+    <script src="js/socket.js"></script> </body>
+</html>

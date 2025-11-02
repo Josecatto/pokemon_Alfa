@@ -7,21 +7,20 @@
 
   <!-- Estilos -->
   <link rel="stylesheet" href="css/styles.css">
-  <!-- (Opcional) Íconos para el usuario -->
   <script src="https://kit.fontawesome.com/a2d9b2d6c4.js" crossorigin="anonymous"></script>
 </head>
 
-<body>
+<body class="profile-page">
   <header>
     <h1>Mi Perfil</h1>
   </header>
 
-  <nav>
-    <a href="index.html">Catálogo</a> |
-    <a href="#" id="cerrarSesion">Cerrar Sesión</a>
+  <nav class="perfil-nav">
+    <a href="index.html" class="btn">Catálogo</a>
+    <a href="chat.html" class="btn">Chat Pokémon</a>
   </nav>
 
-  <main>
+  <main class="profile-container">
     <section id="perfilContainer" class="perfil-section">
       <p>Cargando perfil...</p>
     </section>
@@ -31,6 +30,7 @@
     <p>Pokédex Navia y Aldana © 2025</p>
   </footer>
 
+  <!-- Script principal del perfil -->
   <script src="js/perfil.js"></script>
 </body>
 </html>

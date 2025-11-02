@@ -1,206 +1,630 @@
-/* === Estilo General === */
-body {
-  font-family: 'Poppins', sans-serif;
+/* === GLOBAL / BACKGROUND OSCURO === */
+:root{
+  --neon1: #a855f7;
+  --neon2: #c084fc;
+  --accent: #06b6d4;
+  --card-bg: rgba(20,20,30,0.95);
+  --muted: #94a3b8;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
   margin: 0;
-  padding: 0;
-  background: linear-gradient(135deg, #07090f, #0d111a, #1a2333);
-  color: #e0f2ff;
-  text-align: center;
+  font-family: 'Poppins', sans-serif;
+  background: radial-gradient(1200px 600px at 10% 10%, #0a0812 0%, #060710 20%, #05030a 50%, #03020a 100%);
+  color: #e6eef8;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Keep header/nav styles you already had (keeps site consistency) */
+header { /* ...preservas tus reglas previas... */ }
+
+/* === AUTH (LOGIN / REGISTER) - tarjeta centrada === */
+.auth-wrapper {
   min-height: 100vh;
-}
-
-/* === Header / Navegación === */
-header {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: rgba(10, 15, 25, 0.9);
-  padding: 10px 20px;
-  box-shadow: 0 0 25px rgba(0, 195, 255, 0.25);
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  flex-wrap: wrap;
-  backdrop-filter: blur(6px);
+  justify-content: center;
+  padding: 32px;
+  background: transparent; /* fondo global ya aplicado */
 }
 
-header h1 {
-  color: #7dd3fc;
-  font-size: 1.4rem;
-  text-shadow: 0 0 10px #38bdf8;
-  margin: 5px 0;
+.auth-box {
+  width: 100%;
+  max-width: 480px;
+  background: linear-gradient(180deg, rgba(30,19,40,0.9), rgba(10,10,18,0.9));
+  border-radius: 14px;
+  border: 1px solid rgba(168,85,247,0.12);
+  box-shadow: 0 8px 30px rgba(16,8,40,0.6), 0 0 30px rgba(168,85,247,0.06);
+  padding: 28px;
 }
 
-.user-buttons {
-  display: flex;
-  gap: 10px;
+/* titulo grande centrado */
+.auth-box h1 {
+  margin: 0 0 12px 0;
+  font-size: 1.9rem;
+  color: var(--neon2);
+  text-shadow: 0 0 12px rgba(168,85,247,0.25);
 }
 
-.boton {
-  background: linear-gradient(90deg, #0284c7, #06b6d4);
-  border: none;
-  border-radius: 8px;
-  color: white;
-  font-weight: 600;
-  padding: 8px 14px;
-  cursor: pointer;
-  transition: all 0.3s;
+/* inputs y botones coherentes con tema */
+.auth-box input {
+  width: 100%;
+  padding: 10px 12px;
+  margin: 8px 0;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.04);
+  background: #0f1724;
+  color: #e6eef8;
 }
 
-.boton:hover {
-  background: linear-gradient(90deg, #0ea5e9, #22d3ee);
-  box-shadow: 0 0 15px rgba(34, 211, 238, 0.5);
-}
-
-/* === Controles de búsqueda === */
-.controls {
-  margin: 20px;
-}
-
-input[type="text"] {
-  border-radius: 5px;
-  padding: 8px;
-  border: 1px solid #334155;
-  background-color: #0f172a;
-  color: #e2e8f0;
-  width: 220px;
-}
-
-input[type="text"]:focus {
+.auth-box input:focus {
   outline: none;
-  border-color: #38bdf8;
-  box-shadow: 0 0 5px #38bdf8;
+  box-shadow: 0 0 14px rgba(168,85,247,0.18);
+  border-color: rgba(168,85,247,0.35);
 }
 
-button {
-  background: linear-gradient(90deg, #0284c7, #06b6d4);
+.auth-box button {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  border-radius: 10px;
   border: none;
-  border-radius: 8px;
-  color: white;
-  font-weight: 600;
-  padding: 8px 14px;
+  color: #fff;
+  background: linear-gradient(90deg, var(--neon1), #7e22ce);
   cursor: pointer;
-  transition: all 0.3s;
-  margin-left: 5px;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(168,85,247,0.15);
 }
 
-button:hover {
-  background: linear-gradient(90deg, #0ea5e9, #22d3ee);
-  box-shadow: 0 0 15px rgba(34, 211, 238, 0.5);
-}
-
-/* === Cuadrícula de Pokémon (corregido el ID) === */
+/* === CATALOGO: cuadrícula filas x columnas === */
 #pokemonContainer {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); /* filas+columnas */
   gap: 20px;
   padding: 20px;
-  justify-items: center;
+  width: 100%;
+  max-width: 1200px;
+  margin: 24px auto;
+  align-items: start;
 }
 
-/* === Tarjeta Pokémon === */
 .pokemon-card {
-  background: rgba(20, 25, 40, 0.9);
-  border: 1px solid rgba(0, 200, 255, 0.25);
-  border-radius: 15px;
-  box-shadow: 0 0 15px rgba(0, 195, 255, 0.1);
-  transition: transform 0.2s, box-shadow 0.3s;
+  background: linear-gradient(180deg, rgba(15,18,28,0.95), rgba(8,10,18,0.9));
+  border-radius: 12px;
   padding: 12px;
-  width: 150px;
+  width: 100%;
+  max-width: 220px;
   text-align: center;
+  border: 1px solid rgba(168,85,247,0.06);
+  box-shadow: 0 6px 18px rgba(10,10,20,0.6);
+  transition: transform .18s ease, box-shadow .18s ease;
 }
 
 .pokemon-card:hover {
   transform: translateY(-6px);
-  box-shadow: 0 0 25px rgba(56, 189, 248, 0.4);
+  box-shadow: 0 14px 40px rgba(168,85,247,0.12);
 }
 
+/* imagen y texto */
 .pokemon-card img {
-  width: 100px;
-  height: 100px;
+  width: 110px;
+  height: 110px;
   object-fit: contain;
-  margin-bottom: 10px;
 }
 
-.pokemon-card h3 {
-  color: #bae6fd;
-  margin: 5px 0;
+.pokemon-card h3 { color: #dcecff; margin: 8px 0; }
+.pokemon-card p { color: var(--muted); font-size: .88rem; margin: 4px 0; }
+
+/* === PERFIL: layout 2 columnas (info + chat) === */
+.profile-container {
+  max-width: 1100px;
+  margin: 30px auto;
+  padding: 20px;
+  width: 95%;
 }
 
-.pokemon-card p {
-  font-size: 0.85rem;
-  color: #94a3b8;
+.profile-layout {
+  display: grid;
+  grid-template-columns: 1fr 380px; /* izquierda contenido, derecha chat */
+  gap: 22px;
+  align-items: start;
 }
 
-/* === Pokémon Favorito === */
-#pokemon-favorito {
-  margin-top: 30px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-#pokemon-favorito .pokemon-card {
-  width: 220px;
-}
-
-/* === Texto General === */
-p {
-  color: #cbd5e1;
-}
-
-/* === Scrollbar personalizada (opcional) === */
-::-webkit-scrollbar {
-  width: 8px;
-}
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, #06b6d4, #0284c7);
-  border-radius: 8px;
-}
-::-webkit-scrollbar-track {
-  background: rgba(15, 23, 42, 0.6);
-}
-/* === Estilo para el perfil especial === */
+/* tarjeta del usuario (izquierda) */
 .perfil-card {
-  background: rgba(20, 20, 30, 0.9);
-  border-radius: 15px;
-  padding: 30px;
-  text-align: center;
-  color: #fff;
-  box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
-  max-width: 400px;
-  margin: 50px auto;
+  background: var(--card-bg);
+  border-radius: 12px;
+  padding: 22px;
+  border: 1px solid rgba(168,85,247,0.06);
+  box-shadow: 0 10px 25px rgba(2,6,23,0.6);
 }
 
-.pokemon-fav {
-  margin-top: 20px;
-}
-
-.poke-info {
+/* chat (derecha) */
+.chat-box {
+  background: linear-gradient(180deg, rgba(8,6,15,0.95), rgba(15,10,35,0.92));
+  border-radius: 12px;
+  padding: 12px;
+  height: 520px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  border: 1px solid rgba(6,182,212,0.06);
+  box-shadow: 0 8px 26px rgba(6,182,212,0.04);
+}
+
+/* area mensajes (scroll) */
+#chat {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* burbujas */
+.chat-msg {
+  max-width: 85%;
+  padding: 8px 10px;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+/* remite y receptor distintos colores */
+.chat-msg.me {
+  align-self: flex-end;
+  background: linear-gradient(90deg, rgba(168,85,247,0.95), rgba(124,58,237,0.9));
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(168,85,247,0.12);
+}
+
+.chat-msg.other {
+  align-self: flex-start;
+  background: rgba(255,255,255,0.03);
+  color: #dbeafe;
+  border: 1px solid rgba(255,255,255,0.03);
+}
+
+/* footer input chat */
+.chat-input {
+  display: flex;
+  gap: 8px;
   margin-top: 10px;
 }
 
-.poke-fav-img {
-  width: 120px;
-  height: 120px;
-  image-rendering: pixelated;
-  margin-bottom: 10px;
+.chat-input input {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.03);
+  background: #0b1220;
+  color: #e6eef8;
 }
 
-.btn-catalogo, .btn-logout {
-  background-color: #00bfff;
+.chat-input button {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: none;
+  background: linear-gradient(90deg, var(--neon1), var(--accent));
+  color: white;
+  font-weight: 700;
+}
+
+/* === Favorito destacado (en perfil) === */
+#pokemon-favorito .pokemon-card { width: 100%; max-width: 260px; margin: 0 auto; }
+
+/* === Responsive: apila en móvil === */
+@media (max-width: 900px) {
+  .profile-layout { grid-template-columns: 1fr; }
+  .chat-box { height: 360px; margin-top: 8px; }
+  .auth-box { max-width: 92%; padding: 18px; }
+  #pokemonContainer { gap: 14px; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+}
+/* === INPUTS con borde y brillo neón morado === */
+input[type="text"],
+input[type="password"],
+input[type="email"] {
+  width: 100%;
+  padding: 10px 12px;
+  margin: 8px 0;
+  border-radius: 10px;
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  background: rgba(10, 10, 20, 0.85);
+  color: #e9d5ff;
+  font-size: 1rem;
+  transition: all 0.25s ease-in-out;
+  box-shadow: inset 0 0 8px rgba(168, 85, 247, 0.2);
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="email"]:focus {
+  outline: none;
+  border-color: #c084fc;
+  box-shadow: 0 0 12px #a855f7, inset 0 0 6px rgba(168, 85, 247, 0.4);
+  background: rgba(20, 10, 30, 0.9);
+}
+
+/* === BOTONES con efecto neón morado === */
+button, .btn, .btn-logout, .btn-catalogo {
+  display: inline-block;
+  background: linear-gradient(90deg, #a855f7, #c084fc, #a855f7);
+  background-size: 200%;
   color: #fff;
+  font-weight: 700;
+  letter-spacing: 0.5px;
   border: none;
   border-radius: 10px;
-  padding: 10px 20px;
+  padding: 10px 18px;
   cursor: pointer;
-  margin-top: 15px;
-  transition: 0.3s;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.5);
+  transition: all 0.3s ease;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.6);
 }
 
-.btn-catalogo:hover, .btn-logout:hover {
-  background-color: #0099cc;
+button:hover, .btn:hover, .btn-logout:hover, .btn-catalogo:hover {
+  background-position: right center;
+  box-shadow: 0 0 25px rgba(192, 132, 252, 0.8),
+              0 0 50px rgba(168, 85, 247, 0.5);
+  transform: translateY(-2px);
+}
+
+button:active {
+  transform: scale(0.96);
+  box-shadow: 0 0 10px rgba(192, 132, 252, 0.6);
+}
+
+/* === Efecto especial para botones primarios (login / registrar) === */
+#log_btn, #reg_btn {
+  font-size: 1.05rem;
+  width: 100%;
+  margin-top: 10px;
+  background: linear-gradient(90deg, #9333ea, #a855f7, #c084fc);
+  background-size: 300%;
+  animation: glowMove 6s ease infinite;
+}
+
+@keyframes glowMove {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* === Hover especial para esos botones === */
+#log_btn:hover, #reg_btn:hover {
+  box-shadow: 0 0 20px #a855f7, 0 0 40px #c084fc;
+}
+
+/* === Centrado del login === */
+.auth-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: radial-gradient(circle at center, #0b0316 0%, #04010b 100%);
+}
+
+.auth-box {
+  background: rgba(20, 10, 30, 0.9);
+  border-radius: 15px;
+  padding: 30px;
+  box-shadow: 0 0 30px rgba(168, 85, 247, 0.25);
+  border: 1px solid rgba(192, 132, 252, 0.2);
+  max-width: 400px;
+  width: 90%;
+}
+
+.auth-box h2 {
+  color: #c084fc;
+  text-shadow: 0 0 12px rgba(168, 85, 247, 0.5);
+  margin-bottom: 15px;
+}
+/* === Centrado de botones y barra de búsqueda en el encabezado === */
+header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;      /* Centra horizontalmente */
+  justify-content: center;  /* Centra verticalmente */
+  text-align: center;
+  gap: 10px;
+  padding: 20px 0;
+}
+
+/* Contenedor de botones */
+.user-buttons {
+  display: flex;
+  flex-wrap: wrap;          /* Permite que los botones bajen si no caben */
+  justify-content: center;  /* Centra los botones */
+  gap: 10px;
+  margin-top: 10px;
+}
+
+/* Barra de búsqueda centrada */
+.controls {
+  display: flex;
+  justify-content: center;  /* Centra horizontalmente el input y botones */
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.controls input[type="text"] {
+  width: 220px;
+  text-align: center;
+}
+
+/* Estilo consistente de los botones del header */
+header .boton,
+header button {
+  background: linear-gradient(90deg, #a855f7, #c084fc, #a855f7);
+  color: white;
+  font-weight: 700;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 14px;
+  cursor: pointer;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.4);
+  transition: all 0.3s ease;
+}
+
+header .boton:hover,
+header button:hover {
+  background-position: right center;
+  box-shadow: 0 0 25px rgba(192, 132, 252, 0.8),
+              0 0 40px rgba(168, 85, 247, 0.6);
+  transform: translateY(-2px);
+}
+
+/* Responsivo para pantallas pequeñas */
+@media (max-width: 600px) {
+  header {
+    padding: 10px;
+  }
+
+  .controls {
+    flex-direction: column;
+  }
+
+  .user-buttons {
+    flex-direction: column;
+  }
+
+  .controls input[type="text"] {
+    width: 100%;
+    max-width: 260px;
+  }
+}
+/* === PERFIL: ESTILO PARA CONTENIDO INYECTADO === */
+.perfil-section {
+  background: rgba(20, 10, 30, 0.92);
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 420px;
+  width: 100%;
+  margin: 20px auto;
+  border: 1px solid rgba(168, 85, 247, 0.2);
+  box-shadow: 
+    0 8px 32px rgba(10, 5, 30, 0.6),
+    0 0 30px rgba(168, 85, 247, 0.15);
+  backdrop-filter: blur(8px);
+  text-align: center;
+  color: #e6eef8;
+}
+
+.perfil-section p {
+  margin: 10px 0;
+  font-size: 1rem;
+  color: #d8b4ff;
+}
+
+.perfil-section p strong {
+  color: #c084fc;
+  font-weight: 600;
+  text-shadow: 0 0 8px rgba(192, 132, 252, 0.4);
+}
+
+/* Pokémon favorito */
+.pokemon-favorito {
+  margin: 20px 0;
+  padding: 16px;
+  background: rgba(30, 15, 50, 0.6);
+  border-radius: 12px;
+  border: 1px solid rgba(168, 85, 247, 0.15);
+}
+
+.pokemon-favorito img {
+  width: 160px;
+  height: 160px;
+  object-fit: contain;
+  filter: drop-shadow(0 0 12px rgba(168, 85, 247, 0.4));
+  margin: 0 auto;
+  display: block;
+}
+
+.pokemon-favorito figcaption {
+  margin-top: 12px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #c084fc;
+  text-shadow: 0 0 10px rgba(192, 132, 252, 0.5);
+}
+
+/* Botón cerrar sesión */
+#cerrarSesionBtn {
+  width: 100%;
+  max-width: 260px;
+  margin: 20px auto 0;
+  padding: 12px;
+  background: linear-gradient(90deg, #9333ea, #a855f7, #c084fc);
+  background-size: 300%;
+  animation: glowMove 6s ease infinite;
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
+  transition: all 0.3s ease;
+  display: block;
+}
+
+#cerrarSesionBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 30px rgba(192, 132, 252, 0.8);
+}
+
+/* Navegación superior */
+.perfil-nav {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 16px 0;
+  flex-wrap: wrap;
+}
+
+.perfil-nav .btn {
+  padding: 8px 16px;
+  font-size: 0.95rem;
+  min-width: 120px;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .perfil-section {
+    padding: 20px;
+    margin: 10px;
+  }
+  .pokemon-favorito img {
+    width: 130px;
+    height: 130px;
+  }
+  .perfil-nav {
+    flex-direction: column;
+    align-items: center;
+  }
+}
+/* === PERFIL: TARJETA COMPACTA Y SIN DESBORDE === */
+.perfil-section {
+  background: rgba(20, 10, 30, 0.92);
+  border-radius: 16px;
+  padding: 20px !important; /* REDUCIDO */
+  max-width: 360px !important;
+  width: 100%;
+  margin: 16px auto;
+  border: 1px solid rgba(168, 85, 247, 0.25);
+  box-shadow: 
+    0 8px 32px rgba(10, 5, 30, 0.6),
+    0 0 30px rgba(168, 85, 247, 0.18);
+  backdrop-filter: blur(10px);
+  text-align: center;
+  color: #e6eef8;
+  overflow: hidden; /* EVITA QUE LA IMAGEN SE SALGA */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px; /* ESPACIADO UNIFORME */
+}
+
+/* Textos más compactos */
+.perfil-section p {
+  margin: 6px 0 !important;
+  font-size: 0.95rem;
+  color: #d8b4ff;
+}
+
+.perfil-section p strong {
+  color: #c084fc;
+  font-weight: 600;
+  text-shadow: 0 0 8px rgba(192, 132, 252, 0.4);
+}
+
+/* === POKÉMON FAVORITO: IMAGEN DENTRO DEL CUADRO === */
+.pokemon-favorito {
+  margin: 12px 0;
+  padding: 0;
+  background: transparent;
+  border: none;
+  width: 100%;
+  max-width: 180px; /* LIMITA EL ANCHO */
+  text-align: center;
+}
+
+.pokemon-favorito img {
+  width: 100% !important;
+  height: auto !important;
+  max-height: 160px; /* CONTROL DE ALTURA */
+  object-fit: contain;
+  filter: drop-shadow(0 0 12px rgba(168, 85, 247, 0.5));
+  margin: 0 auto;
+  display: block;
+}
+
+.pokemon-favorito figcaption {
+  margin-top: 8px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #c084fc;
+  text-shadow: 0 0 10px rgba(192, 132, 252, 0.5);
+}
+
+/* === BOTÓN CERRAR SESIÓN === */
+#cerrarSesionBtn {
+  width: 100%;
+  max-width: 220px;
+  margin: 12px auto 0 !important;
+  padding: 11px;
+  background: linear-gradient(90deg, #9333ea, #a855f7, #c084fc);
+  background-size: 300%;
+  animation: glowMove 6s ease infinite;
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-weight: 700;
+  font-size: 0.98rem;
+  cursor: pointer;
+  box-shadow: 0 0 18px rgba(168, 85, 247, 0.5);
+  transition: all 0.3s ease;
+}
+
+#cerrarSesionBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 28px rgba(192, 132, 252, 0.8);
+}
+
+/* === NAVEGACIÓN SUPERIOR === */
+.perfil-nav {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 12px 0;
+  flex-wrap: wrap;
+}
+
+.perfil-nav .btn {
+  padding: 7px 14px;
+  font-size: 0.9rem;
+  min-width: 110px;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 480px) {
+  .perfil-section {
+    padding: 16px !important;
+    max-width: 320px !important;
+    margin: 10px auto;
+  }
+  .pokemon-favorito img {
+    max-height: 130px;
+  }
+  .perfil-nav {
+    flex-direction: column;
+    align-items: center;
+  }
 }

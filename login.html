@@ -2,29 +2,52 @@
 <html lang="es">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Login / Registro</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Login / Registro - Pokédex Catto</title>
   <link rel="stylesheet" href="css/styles.css">
-
 </head>
-<body>
-  <main class="auth-container">
-    <section>
-      <h2>Registro</h2>
-      <input id="reg_nombre" placeholder="Nombre">
-      <input id="reg_correo" placeholder="Correo">
-      <input id="reg_pass" placeholder="Contraseña" type="password">
-      <button id="reg_btn">Registrar</button>
-    </section>
+<body class="auth-page">
+  <div class="auth-wrapper">
+    <div class="auth-box">
+      <h1>Pokédex Navia y Aldana</h1>
 
-    <section>
-      <h2>Login</h2>
-      <input id="log_correo" placeholder="Correo">
-      <input id="log_pass" placeholder="Contraseña" type="password">
-      <button id="log_btn">Iniciar sesión</button>
-    </section>
-  </main>
-<p>¿No tienes cuenta?<a href="#" onclick="window.location.href='index.html'">Volver al catálogo</a></p>
+      <!-- REGISTRO -->
+      <section class="form-section">
+        <h2>Registro</h2>
+        <div class="input-group">
+          <label for="nombre">Nombre</label>
+          <input id="nombre" type="text" placeholder="Ingresa tu nombre" required>
+        </div>
+        <div class="input-group">
+          <label for="correo_reg">Correo</label>
+          <input id="correo_reg" type="email" placeholder="tucorreo@ejemplo.com" required>
+        </div>
+        <div class="input-group">
+          <label for="contrasena_reg">Contraseña</label>
+          <input id="contrasena_reg" type="password" placeholder="••••••••" required>
+        </div>
+        <button id="reg_btn">Registrar</button>
+      </section>
+
+      <!-- INICIAR SESIÓN -->
+      <section class="form-section">
+        <h2>Iniciar Sesión</h2>
+        <div class="input-group">
+          <label for="correo">Correo</label>
+          <input id="correo" type="email" placeholder="tucorreo@ejemplo.com" required>
+        </div>
+        <div class="input-group">
+          <label for="contrasena">Contraseña</label>
+          <input id="contrasena" type="password" placeholder="••••••••" required>
+        </div>
+        <button id="log_btn">Entrar</button>
+      </section>
+
+      <p class="footer-link">¿No tienes cuenta? <a href="index.html">Volver al catálogo</a><br>
+        <small>© 2025 Pokédex Navia y Elkin</small>
+      </p>
+    </div>
+  </div>
 
   <script src="js/auth.js"></script>
 </body>
