@@ -5,12 +5,14 @@ document.addEventListener("DOMContentLoaded", () => {
   console.log("✅ auth.js cargado correctamente");
 
   // ========== REGISTRO ==========
-  const regBtn = document.getElementById("reg_btn");
-  if (regBtn) {
-    regBtn.addEventListener("click", async () => {
-      const nombre = document.getElementById("reg_nombre").value.trim();
-      const correo = document.getElementById("reg_correo").value.trim();
-      const contrasena = document.getElementById("reg_pass").value.trim();
+  // ========== REGISTRO ==========
+const regBtn = document.getElementById("reg_btn");
+if (regBtn) {
+  regBtn.addEventListener("click", async () => {
+    const nombre = document.getElementById("nombre").value.trim();
+    const correo = document.getElementById("correo_reg").value.trim();
+    const contrasena = document.getElementById("contrasena_reg").value.trim();
+
 
       if (!nombre || !correo || !contrasena) {
         alert("Por favor completa todos los campos");

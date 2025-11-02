@@ -47,6 +47,13 @@ DB_CONFIG = {
 # Inicializar OpenAI client (si no hay clave, se queda None)
 client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
+# ----------------------------
+# Configuración de OpenRouter (en lugar de OpenAI)
+# ----------------------------
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+
+
 app = FastAPI(title="Pokedex Catto - Backend (MySQL + OpenAI)")
 
 # Permitir peticiones desde el frontend (ajusta en producción)
@@ -212,14 +219,12 @@ def get_pokemon(identifier: str):
         "abilities": ", ".join([a["ability"]["name"] for a in poke.get("abilities", [])]),
     }
 
-
 # ----------------------------
-# Endpoint: descripción con IA (OpenAI)
+# Endpoint: descripción con IA (OpenRouter)
 # ----------------------------
 @app.get("/descripcion/{name}")
 def get_pokemon_description(name: str):
-    """Genera descripción breve + debilidades con OpenAI."""
-    # Obtener info de PokeAPI (para tipos/abilities)
+    """Genera descripción breve + debilidades con OpenRouter."""
     poke = safe_get(f"{POKE_API}/pokemon/{name.lower()}")
     if not poke:
         raise HTTPException(status_code=404, detail="Pokémon no encontrado")
@@ -227,12 +232,12 @@ def get_pokemon_description(name: str):
     tipos = [t["type"]["name"] for t in poke.get("types", [])]
     habilidades = [a["ability"]["name"] for a in poke.get("abilities", [])]
 
-    if not client:
+    if not OPENROUTER_API_KEY:
         return {
             "name": name.capitalize(),
             "types": tipos,
             "abilities": habilidades,
-            "descripcion": "OpenAI API Key no configurada.",
+            "descripcion": "⚠️ API Key de OpenRouter no configurada.",
             "debilidades": None
         }
 
@@ -242,19 +247,34 @@ def get_pokemon_description(name: str):
     )
 
     try:
-        completion = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": "Eres un experto en Pokémon y das respuestas breves."},
-                {"role": "user", "content": prompt}
-            ],
-            # opcionales: temperature, max_tokens
+        response = requests.post(
+            OPENROUTER_URL,
+            headers={
+                "Authorization": f"Bearer {OPENROUTER_API_KEY}",
+                "Content-Type": "application/json",
+                "HTTP-Referer": "http://localhost:8000",
+                "X-Title": "Pokedex Catto"
+            },
+            json={
+                "model": "gpt-4o-mini",
+                "messages": [
+                    {"role": "system", "content": "Eres un experto en Pokémon y das respuestas breves."},
+                    {"role": "user", "content": prompt}
+                ]
+            },
+            timeout=30
         )
-        raw = completion.choices[0].message.content.strip()
-        # Intentar separar "Debilidades:" si el modelo lo devuelve así
+
+        if response.status_code != 200:
+            raise HTTPException(status_code=response.status_code, detail=response.text)
+
+        data = response.json()
+        raw = data["choices"][0]["message"]["content"].strip()
+
         partes = raw.split("Debilidades:") if "Debilidades:" in raw else raw.split("Debilidades")
         descripcion = partes[0].strip()
         debilidades = partes[1].strip() if len(partes) > 1 else None
+
     except Exception as e:
         descripcion = f"Error generando descripción con IA: {e}"
         debilidades = None
@@ -266,6 +286,7 @@ def get_pokemon_description(name: str):
         "descripcion": descripcion,
         "debilidades": debilidades
     }
+
 
 
 # ----------------------------
@@ -383,6 +404,7 @@ def obtener_perfil(correo: str):
 # ----------------------------
 from typing import List, Dict
 from fastapi import WebSocket, WebSocketDisconnect
+import json
 
 # Lista de clientes conectados (cada uno con su WebSocket y nombre/correo)
 connected_clients: List[Dict] = []
@@ -390,7 +412,9 @@ connected_clients: List[Dict] = []
 @app.websocket("/ws/{usuario}")
 async def websocket_endpoint(websocket: WebSocket, usuario: str):
     """
-    WebSocket que maneja chat en tiempo real.
+    WebSocket que maneja:
+      💬 Chat en tiempo real
+      🗺️ Actualización de ubicaciones (para el mapa)
     Cada usuario se identifica con su nombre o correo en la URL.
     Ejemplo: ws://127.0.0.1:8000/ws/ash@pokedex.com
     """
@@ -398,7 +422,7 @@ async def websocket_endpoint(websocket: WebSocket, usuario: str):
     connected_clients.append({"socket": websocket, "usuario": usuario})
     print(f"⚡ Usuario conectado: {usuario}")
 
-    # Enviar mensaje de bienvenida (en formato JSON)
+    # Enviar mensaje de bienvenida
     await websocket.send_json({
         "user": "Sistema",
         "text": f"Bienvenido {usuario}! 🧢"
@@ -406,10 +430,36 @@ async def websocket_endpoint(websocket: WebSocket, usuario: str):
 
     try:
         while True:
-            # Esperar mensaje entrante del cliente
-            data = await websocket.receive_json()
-            mensaje_texto = data.get("text", "").strip()
+            # Recibir mensaje del cliente (texto o JSON)
+            raw_data = await websocket.receive_text()
 
+            try:
+                data = json.loads(raw_data)  # Intentar decodificar JSON
+            except json.JSONDecodeError:
+                # Si no es JSON, lo tratamos como texto plano (chat)
+                data = {"text": raw_data}
+
+            # --- 📍 Si es un mensaje de ubicación (mapa) ---
+            if data.get("tipo") == "ubicacion":
+                lat = data.get("lat")
+                lng = data.get("lng")
+
+                # Validar que haya coordenadas
+                if lat is not None and lng is not None:
+                    print(f"📍 {usuario} envió ubicación: {lat}, {lng}")
+
+                    # Reenviar la ubicación a todos los conectados
+                    for client in connected_clients:
+                        await client["socket"].send_text(json.dumps({
+                            "tipo": "ubicacion",
+                            "usuario": usuario,
+                            "lat": lat,
+                            "lng": lng
+                        }))
+                continue  # No guardar ubicaciones en la base de datos
+
+            # --- 💬 Si es un mensaje de chat normal ---
+            mensaje_texto = data.get("text", "").strip()
             if not mensaje_texto:
                 continue
 
@@ -429,11 +479,11 @@ async def websocket_endpoint(websocket: WebSocket, usuario: str):
             except Exception as db_err:
                 print(f"⚠️ Error al guardar mensaje en la BD: {db_err}")
 
-            # Reenviar el mensaje a todos los clientes conectados
+            # Reenviar mensaje a todos los conectados
             for client in connected_clients:
                 await client["socket"].send_json({
-                "usuario": usuario,        # <--- Corregido para coincidir con el frontend
-                "texto": mensaje_texto     # <--- Corregido para coincidir con el frontend
+                    "usuario": usuario,
+                    "texto": mensaje_texto
                 })
 
     except WebSocketDisconnect:
@@ -447,3 +497,5 @@ async def websocket_endpoint(websocket: WebSocket, usuario: str):
         connected_clients[:] = [
             c for c in connected_clients if c["socket"] != websocket
         ]
+# ----------------------------
+# Fin del archivo
