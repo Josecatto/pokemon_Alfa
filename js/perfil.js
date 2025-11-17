@@ -1,83 +1,91 @@
-// perfil.js (CÓDIGO CORREGIDO)
+/**
+ * perfil.js
+ * ---------------------------------------------------------------
+ * Carga y muestra la información del usuario logueado.
+ * Se conecta al endpoint `/perfil/{correo}` del backend.
+ *
+ * Funcionalidades:
+ *  - Verificar sesión del usuario (localStorage)
+ *  - Obtener datos del usuario desde FastAPI
+ *  - Mostrar Pokémon favorito si existe
+ *  - Botón "Ir al catálogo" cuando no tiene favorito
+ *  - Cerrar sesión limpiando el localStorage
+ * ---------------------------------------------------------------
+ */
+
 const API_URL = "http://127.0.0.1:8000";
 
 document.addEventListener("DOMContentLoaded", async () => {
-    const perfilContainer = document.getElementById("perfilContainer");
-    
-    // 🔑 CORRECCIÓN: Lee las claves de sesión separadas
-    const nombreUsuario = localStorage.getItem("nombre");
-    const correoUsuario = localStorage.getItem("correo");
-    
-    let user = null;
-    if (nombreUsuario && correoUsuario) {
-        user = {
-            nombre: nombreUsuario,
-            correo: correoUsuario
-        };
-    }
 
-    // 🧩 Si no hay usuario logueado
+    const perfilContainer = document.getElementById("perfilContainer");
+
+    /* ============================================================
+     * 1. Recuperar usuario logueado desde localStorage
+     *    (la información se guarda en login.js)
+     * ============================================================ */
+const user = JSON.parse(localStorage.getItem("user") || "null");
+
+if (!user || !user.correo) {
+    perfilContainer.innerHTML = `
+        <div class="perfil-error">
+            <p>No estás logueado. <a href="login.html">Inicia sesión</a></p>
+        </div>`;
+    return;
+}
+
+
+    // Si no está logueado, mostrar mensaje y detener ejecución
     if (!user) {
         perfilContainer.innerHTML = `
             <div class="perfil-error">
                 <p>No estás logueado. <a href="login.html">Inicia sesión</a></p>
-            </div>
-        `;
+            </div>`;
         return;
     }
 
+    /* ============================================================
+     * 2. Consultar perfil en el backend
+     * ============================================================ */
     try {
-        // 🧠 Petición al backend para obtener el perfil (usa user.correo)
         const res = await fetch(`${API_URL}/perfil/${encodeURIComponent(user.correo)}`);
-        if (!res.ok) throw new Error("Error al obtener el perfil");
+
+        if (!res.ok) {
+            throw new Error("Error al obtener el perfil desde el servidor.");
+        }
 
         const data = await res.json();
 
-        // 🧩 Mostrar datos del usuario
+        /* ========================================================
+         * 3. Dibujar tarjeta del perfil en pantalla
+         * ======================================================== */
         perfilContainer.innerHTML = `
             <div class="perfil-card">
-                <h2><i class="fa-solid fa-user"></i> Usuario: ${data.nombre || user.nombre}</h2>
+                
+                <!-- Nombre del usuario -->
+                <h2><i class="fa-solid fa-user"></i> Usuario: ${data.nombre}</h2>
                 <p><strong>Correo:</strong> ${data.correo}</p>
 
+                <!-- Pokémon favorito -->
                 <div class="pokemon-fav">
                     <h3>Pokémon favorito:</h3>
+
                     ${
-                        data.pokemon_favorito
-                          ? `
+                        data.pokemon_favorito && data.pokemon_favorito.nombre
+                        ? `
                             <div class="poke-info">
-                                <img src="${data.pokemon_favorito.imagen}" 
-                                     alt="${data.pokemon_favorito.nombre}" 
-                                     class="poke-fav-img">
+                                <img 
+                                    src="${data.pokemon_favorito.imagen}" 
+                                    alt="${data.pokemon_favorito.nombre}" 
+                                    class="poke-fav-img"
+                                >
                                 <p>${data.pokemon_favorito.nombre}</p>
                             </div>`
-                          : `
-                            <p>No has seleccionado un Pokémon favorito aún.</p>
-                            <button id="goCatalogBtn" class="btn-catalogo">Ir al catálogo</button>
-                            `
-                    }
-                </div>
+                        : `
+                            <p>No has seleccionado un Pokémon favorito aún.</p>`}`;
 
-                <button id="logoutBtn" class="btn-logout">Cerrar sesión</button>
-            </div>
+    } catch (err) {
+        perfilContainer.innerHTML = `
+            <p>Error al cargar perfil: ${err.message}</p>
         `;
-
-        // 🔹 Eventos
-        const goCatalogBtn = document.getElementById("goCatalogBtn");
-        if (goCatalogBtn) {
-            goCatalogBtn.addEventListener("click", () => {
-                window.location.href = "catalogo.html";
-            });
-        }
-
-        const logoutBtn = document.getElementById("logoutBtn");
-        // 🔑 CORRECCIÓN: El logout debe eliminar las claves que usamos para guardar la sesión
-        logoutBtn.addEventListener("click", () => {
-            localStorage.removeItem("nombre");
-            localStorage.removeItem("correo");
-            window.location.href = "login.html";
-        });
-
-    } catch (e) {
-        perfilContainer.innerHTML = `<p>Error al cargar perfil: ${e.message}</p>`;
     }
 });

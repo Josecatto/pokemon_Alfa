@@ -1,34 +1,55 @@
-uvicorn backend.main:app --reload
+-- ============================================
+-- CREACIÓN DE BASE DE DATOS PRINCIPAL
+-- ============================================
+CREATE DATABASE IF NOT EXISTS pokedex_db
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
 
--- Crear base y tablas necesarias
-CREATE DATABASE IF NOT EXISTS pokedex_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE pokedex_db;
 
--- Tabla de pokemons (guardaremos datos básicos)
+-- ============================================
+-- TABLA: pokemons
+-- Guarda los datos básicos de los Pokémon.
+-- Se asume que los pokemons de Kanto serán precargados.
+-- ============================================
 CREATE TABLE IF NOT EXISTS pokemons (
-  id INT PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
-  image TEXT,
-  types TEXT,
-  height FLOAT,
-  weight FLOAT,
-  abilities TEXT
+    id INT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    image TEXT,
+    types TEXT,          -- Se guarda como JSON con la lista de tipos
+    height FLOAT,
+    weight FLOAT,
+    abilities TEXT       -- también en formato JSON o texto plano
 );
 
--- Tabla de usuarios
+-- ============================================
+-- TABLA: usuarios
+-- Maneja los usuarios registrados en la Pokedex.
+-- pokemon_favorito es opcional.
+-- ============================================
 CREATE TABLE IF NOT EXISTS usuarios (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  nombre VARCHAR(100) NOT NULL,
-  correo VARCHAR(150) NOT NULL UNIQUE,
-  contrasena_hash VARCHAR(255) NOT NULL,
-  pokemon_favorito VARCHAR(100) DEFAULT NULL
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    correo VARCHAR(150) NOT NULL UNIQUE,
+    contrasena_hash VARCHAR(255) NOT NULL,
+    pokemon_favorito VARCHAR(100) DEFAULT NULL
 );
 
--- de la guia 7 
-CREATE TABLE mensajes (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  usuario VARCHAR(100) NOT NULL,
-  contenido TEXT NOT NULL,
-  fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- ============================================
+-- TABLA: favoritos
+-- Relación usuario -> pokemon
+-- Para guardar múltiples favoritos por usuario.
+-- (Esto mejora la funcionalidad del sistema)
+-- ============================================
+CREATE TABLE IF NOT EXISTS favoritos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    correo VARCHAR(150) NOT NULL,
+    pokemon VARCHAR(100) NOT NULL,
+    FOREIGN KEY (correo) REFERENCES usuarios(correo)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
 );
-
+--para dar admin a algun usuario:
+--UPDATE usuarios 
+--SET rol = 'admin'
+--WHERE correo = '()@gmail.com';

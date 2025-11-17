@@ -1,19 +1,19 @@
-# backend/main.py
-"""
-FastAPI backend para la Pokédex de Catto (MySQL + OpenAI).
-Endpoints principales:
- - /pokemons/kanto         GET  -> lista de 151 Pokemon (consulta PokeAPI, guarda en MySQL si no existen)
- - /pokemon/{name_or_id}   GET  -> detalle desde BD o PokeAPI
- - /descripcion/{name}     GET  -> descripción breve + debilidades (usa OpenAI)
- - /registro               POST -> registrar usuario (nombre, correo, contraseña)
- - /login                  POST -> iniciar sesión (correo + contraseña)
- - /favorito               POST -> guardar pokemon favorito (correo, pokemon)
- - /perfil/{correo}        GET  -> devuelve perfil de usuario
-"""
+# ============================================================
+#  main.py
+#  Backend REST para la Pokédex – FastAPI + MySQL + OpenRouter
+# ============================================================
+#
+#  Incluye:
+#   ✔ API REST (Pokémon, Login, Registro, Favoritos, Perfil)
+#   ✔ Consumo de PokeAPI externa
+#   ✔ Hash seguro de contraseñas (bcrypt)
+#   ✔ Validación robusta con Pydantic
+#   ✔ Uso de OpenRouter para generar descripción ecológica
+# ============================================================
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr, field_validator
 from dotenv import load_dotenv
 from pathlib import Path
 import os
@@ -21,21 +21,18 @@ import requests
 import mysql.connector
 from mysql.connector import Error
 import bcrypt
-from openai import OpenAI
-from fastapi import FastAPI, WebSocket
-from typing import List
-from fastapi import WebSocket
 
-connected_clients: List[WebSocket] = []
 
-# ----------------------------
-# Cargar .env
-# ----------------------------
+# ============================================================
+# CARGA DE VARIABLES DE ENTORNO (.env)
+# ============================================================
+
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
 
 POKE_API = "https://pokeapi.co/api/v2"
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
+OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 DB_CONFIG = {
     "host": os.getenv("DB_HOST", "localhost"),
@@ -44,206 +41,217 @@ DB_CONFIG = {
     "database": os.getenv("DB_NAME", "pokedex_db"),
 }
 
-# Inicializar OpenAI client (si no hay clave, se queda None)
-client = OpenAI(api_key=OPENAI_API_KEY) if OPENAI_API_KEY else None
 
-# ----------------------------
-# Configuración de OpenRouter (en lugar de OpenAI)
-# ----------------------------
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+# ============================================================
+# INICIALIZAR FASTAPI
+# ============================================================
 
+app = FastAPI(title="Pokedex Catto - Backend Limpio (FastAPI + MySQL + OpenRouter)")
 
-app = FastAPI(title="Pokedex Catto - Backend (MySQL + OpenAI)")
-
-# Permitir peticiones desde el frontend (ajusta en producción)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],   # Permitir frontend
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# ----------------------------
-# Utilidades DB y PokeAPI
-# ----------------------------
+
+# ============================================================
+# UTILIDAD – Conexión a la BD MySQL
+# ============================================================
+
 def get_db_connection():
-    """Devuelve una conexión nueva a MySQL (mysql-connector-python)."""
+    """Crea una nueva conexión MySQL."""
     return mysql.connector.connect(**DB_CONFIG)
 
 
 def safe_get(url, timeout=8):
-    """Peticiones HTTP seguras a PokeAPI u otras."""
+    """Wrapper seguro para consumir APIs externas (PokeAPI)."""
     try:
         r = requests.get(url, timeout=timeout)
         r.raise_for_status()
         return r.json()
-    except requests.RequestException:
+    except:
         return None
 
 
-# ----------------------------
-# Pydantic models para requests
-# ----------------------------
+# ============================================================
+# MODELOS – Validación con Pydantic
+# ============================================================
+
 class RegistroModel(BaseModel):
     nombre: str
-    correo: str
+    correo: EmailStr
     contrasena: str
+
+    # Validar contraseña fuerte
+    @field_validator("contrasena")
+    def validar_contrasena(cls, value):
+        if len(value) < 8:
+            raise ValueError("La contraseña debe tener mínimo 8 caracteres.")
+        if not any(c.isupper() for c in value):
+            raise ValueError("Debe contener al menos 1 MAYÚSCULA.")
+        if not any(c.islower() for c in value):
+            raise ValueError("Debe contener al menos 1 minúscula.")
+        if not any(c.isdigit() for c in value):
+            raise ValueError("Debe contener al menos 1 número.")
+        if not any(c in "!@#$%^&*()_+-=¿?¡!{}[]" for c in value):
+            raise ValueError("Debe contener 1 símbolo especial.")
+        return value
+
 
 class LoginModel(BaseModel):
-    correo: str
+    correo: EmailStr
     contrasena: str
 
+
 class FavoritoModel(BaseModel):
-    correo: str
+    correo: EmailStr
     pokemon: str
 
-# ----------------------------
-# Helpers: insertar/leer pokemons en BD
-# ----------------------------
-def insertar_pokemon_en_bd(poke_obj):
-    """Inserta un Pokémon (dict de PokeAPI) en la tabla pokemons (si no existe)."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    try:
-        id_p = poke_obj["id"]
-        name = poke_obj["name"].capitalize()
-        image = poke_obj["sprites"]["front_default"]
-        types = ", ".join([t["type"]["name"] for t in poke_obj.get("types", [])])
-        height = round(poke_obj.get("height", 0) / 10, 1)
-        weight = round(poke_obj.get("weight", 0) / 10, 1)
-        abilities = ", ".join([a["ability"]["name"] for a in poke_obj.get("abilities", [])])
 
-        # Guardar solo si no existe
-        sql_check = "SELECT id FROM pokemons WHERE id = %s"
-        cursor.execute(sql_check, (id_p,))
-        if cursor.fetchone() is None:
-            sql_insert = """
-                INSERT INTO pokemons (id, name, image, types, height, weight, abilities)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """
-            cursor.execute(sql_insert, (id_p, name, image, types, height, weight, abilities))
-            conn.commit()
-    finally:
-        cursor.close()
-        conn.close()
+# ============================================================
+# ENDPOINT → Cargar 151 Pokémon de Kanto desde PokeAPI
+# ============================================================
 
-
-def obtener_pokemon_bd_por_id(id_p):
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    try:
-        cursor.execute("SELECT * FROM pokemons WHERE id = %s", (id_p,))
-        return cursor.fetchone()
-    finally:
-        cursor.close()
-        conn.close()
-
-
-def obtener_pokemon_bd_por_nombre(name):
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    try:
-        cursor.execute("SELECT * FROM pokemons WHERE name = %s", (name.capitalize(),))
-        return cursor.fetchone()
-    finally:
-        cursor.close()
-        conn.close()
-
-
-# ----------------------------
-# Endpoint: Kanto (151 Pokémon)
-# ----------------------------
 @app.get("/pokemons/kanto")
 def get_kanto_pokemons():
-    """
-    Devuelve lista de los 151 Pokémon de Kanto.
-    Si un Pokémon no está en la BD, lo obtiene de PokeAPI y lo guarda.
-    """
+    """Devuelve los 151 Pokémon de Kanto y los guarda si faltan."""
+
     data = safe_get(f"{POKE_API}/pokemon?limit=151")
     if not data or "results" not in data:
-        raise HTTPException(status_code=502, detail="Error al contactar PokeAPI")
+        raise HTTPException(status_code=502, detail="Error con PokeAPI")
 
     pokemons = []
+
     for item in data["results"]:
         poke = safe_get(item["url"])
         if not poke:
             continue
 
-        # Guardar en BD si no existe
-        insertar_pokemon_en_bd(poke)
+        # Guardar en BD solo si no existe
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM pokemons WHERE id = %s", (poke["id"],))
+        exists = cursor.fetchone()
+
+        if not exists:
+            cursor.execute(
+                """
+                INSERT INTO pokemons (id, name, image, types, height, weight, abilities)
+                VALUES (%s,%s,%s,%s,%s,%s,%s)
+                """,
+                (
+                    poke["id"],
+                    poke["name"].capitalize(),
+                    poke["sprites"]["front_default"],
+                    ", ".join([t["type"]["name"] for t in poke["types"]]),
+                    round(poke["height"] / 10, 1),
+                    round(poke["weight"] / 10, 1),
+                    ", ".join([a["ability"]["name"] for a in poke["abilities"]]),
+                ),
+            )
+            conn.commit()
+
+        cursor.close()
+        conn.close()
 
         pokemons.append({
             "id": poke["id"],
             "name": poke["name"].capitalize(),
             "image": poke["sprites"]["front_default"],
-            "types": [t["type"]["name"] for t in poke.get("types", [])]
+            "types": [t["type"]["name"] for t in poke["types"]],
         })
+
     return pokemons
 
 
-# ----------------------------
-# Endpoint: detalle por id o nombre
-# ----------------------------
+# ============================================================
+# ENDPOINT → Detalle por id o nombre
+# ============================================================
+
 @app.get("/pokemon/{identifier}")
 def get_pokemon(identifier: str):
-    """
-    identifier puede ser id (numérico) o nombre.
-    Devuelve la fila desde BD si existe; si no, intenta obtener desde PokeAPI y guardar.
-    """
-    # Si es dígito, buscar por id
-    if identifier.isdigit():
-        p = obtener_pokemon_bd_por_id(int(identifier))
-        if p:
-            return p
-    else:
-        p = obtener_pokemon_bd_por_nombre(identifier)
-        if p:
-            return p
+    """Devuelve un Pokémon desde BD o desde PokeAPI."""
 
-    # Si no está en BD, pedir a PokeAPI y guardar
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    if identifier.isdigit():
+        cursor.execute("SELECT * FROM pokemons WHERE id = %s", (identifier,))
+    else:
+        cursor.execute("SELECT * FROM pokemons WHERE name = %s", (identifier.capitalize(),))
+
+    row = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    if row:
+        return row
+
+    # Si no existe en BD → pedir a PokeAPI
     poke = safe_get(f"{POKE_API}/pokemon/{identifier.lower()}")
     if not poke:
-        raise HTTPException(status_code=404, detail="Pokémon no encontrado")
+        raise HTTPException(404, "Pokémon no encontrado")
 
-    insertar_pokemon_en_bd(poke)
-    # Formatear respuesta similar a la tabla
+    # Guardarlo
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        INSERT INTO pokemons (id, name, image, types, height, weight, abilities)
+        VALUES (%s,%s,%s,%s,%s,%s,%s)
+        """,
+        (
+            poke["id"],
+            poke["name"].capitalize(),
+            poke["sprites"]["front_default"],
+            ", ".join([t["type"]["name"] for t in poke["types"]]),
+            round(poke["height"] / 10, 1),
+            round(poke["weight"] / 10, 1),
+            ", ".join([a["ability"]["name"] for a in poke["abilities"]]),
+        ),
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
     return {
         "id": poke["id"],
         "name": poke["name"].capitalize(),
         "image": poke["sprites"]["front_default"],
-        "types": ", ".join([t["type"]["name"] for t in poke.get("types", [])]),
-        "height": round(poke.get("height", 0) / 10, 1),
-        "weight": round(poke.get("weight", 0) / 10, 1),
-        "abilities": ", ".join([a["ability"]["name"] for a in poke.get("abilities", [])]),
+        "types": ", ".join([t["type"]["name"] for t in poke["types"]]),
+        "height": round(poke["height"] / 10, 1),
+        "weight": round(poke["weight"] / 10, 1),
+        "abilities": ", ".join([a["ability"]["name"] for a in poke["abilities"]]),
     }
 
-# ----------------------------
-# Endpoint: descripción con IA (OpenRouter)
-# ----------------------------
+
+# ============================================================
+# ENDPOINT → IA Ambiental con OpenRouter
+# ============================================================
+
 @app.get("/descripcion/{name}")
-def get_pokemon_description(name: str):
-    """Genera descripción breve + debilidades con OpenRouter."""
+def descripcion_pokemon(name: str):
+    """Genera una descripción ecológica para la sustentación."""
+
     poke = safe_get(f"{POKE_API}/pokemon/{name.lower()}")
     if not poke:
-        raise HTTPException(status_code=404, detail="Pokémon no encontrado")
+        raise HTTPException(404, "Pokémon no encontrado")
 
-    tipos = [t["type"]["name"] for t in poke.get("types", [])]
-    habilidades = [a["ability"]["name"] for a in poke.get("abilities", [])]
+    tipos = [t["type"]["name"] for t in poke["types"]]
 
     if not OPENROUTER_API_KEY:
         return {
-            "name": name.capitalize(),
-            "types": tipos,
-            "abilities": habilidades,
-            "descripcion": "⚠️ API Key de OpenRouter no configurada.",
-            "debilidades": None
+            "descripcion": "Error: Configure OPENROUTER_API_KEY en el .env"
         }
 
     prompt = (
-        f"Describe brevemente (1-2 frases) al Pokémon {name.capitalize()} y lista sus principales "
-        f"debilidades según sus tipos: {', '.join(tipos)}. Sé conciso y amistoso."
+        f"Genera una descripción breve y educativa sobre por qué es importante "
+        f"cuidar el hábitat natural de {name.capitalize()}, considerando que es de tipo "
+        f"{', '.join(tipos)}. Explica su rol ecológico y cómo proteger el medio ambiente "
+        f"beneficia a su ecosistema. Máximo 3 frases."
     )
 
     try:
@@ -252,250 +260,201 @@ def get_pokemon_description(name: str):
             headers={
                 "Authorization": f"Bearer {OPENROUTER_API_KEY}",
                 "Content-Type": "application/json",
-                "HTTP-Referer": "http://localhost:8000",
-                "X-Title": "Pokedex Catto"
             },
             json={
                 "model": "gpt-4o-mini",
                 "messages": [
-                    {"role": "system", "content": "Eres un experto en Pokémon y das respuestas breves."},
-                    {"role": "user", "content": prompt}
-                ]
+                    {"role": "system", "content": "Eres un experto en ecología Pokémon."},
+                    {"role": "user", "content": prompt},
+                ],
             },
-            timeout=30
         )
-
-        if response.status_code != 200:
-            raise HTTPException(status_code=response.status_code, detail=response.text)
 
         data = response.json()
-        raw = data["choices"][0]["message"]["content"].strip()
+        descripcion = data["choices"][0]["message"]["content"]
 
-        partes = raw.split("Debilidades:") if "Debilidades:" in raw else raw.split("Debilidades")
-        descripcion = partes[0].strip()
-        debilidades = partes[1].strip() if len(partes) > 1 else None
+        return {
+            "pokemon": name.capitalize(),
+            "descripcion": descripcion
+        }
 
     except Exception as e:
-        descripcion = f"Error generando descripción con IA: {e}"
-        debilidades = None
-
-    return {
-        "name": name.capitalize(),
-        "types": tipos,
-        "abilities": habilidades,
-        "descripcion": descripcion,
-        "debilidades": debilidades
-    }
+        raise HTTPException(500, f"Error con IA: {e}")
 
 
-
-# ----------------------------
-# Endpoint: registro
-# ----------------------------
+# ============================================================
+# ENDPOINT → Registro
+# ============================================================
 @app.post("/registro")
-def registro_usuario(data: RegistroModel):
-    """Registra usuario con contraseña hasheada (bcrypt)."""
+def registro(data: RegistroModel):
     conn = get_db_connection()
     cursor = conn.cursor()
+
     try:
-        # comprobar si correo existe
+        # Verificar si el correo existe
         cursor.execute("SELECT id FROM usuarios WHERE correo = %s", (data.correo,))
         if cursor.fetchone():
-            raise HTTPException(status_code=400, detail="Correo ya registrado")
+            raise HTTPException(400, "Correo ya registrado")
 
-        hashed = bcrypt.hashpw(data.contrasena.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+        # Hash de contraseña
+        hashed = bcrypt.hashpw(data.contrasena.encode(), bcrypt.gensalt()).decode()
+
+        # Insertar usuario con rol por defecto
         cursor.execute(
-            "INSERT INTO usuarios (nombre, correo, contrasena_hash) VALUES (%s, %s, %s)",
-            (data.nombre, data.correo, hashed)
+            "INSERT INTO usuarios (nombre, correo, contrasena_hash, rol) VALUES (%s, %s, %s, %s)",
+            (data.nombre, data.correo, hashed, "cliente"),
         )
         conn.commit()
+
         return {"mensaje": "Usuario registrado correctamente"}
-    except Error as e:
-        raise HTTPException(status_code=500, detail=str(e))
+
     finally:
         cursor.close()
         conn.close()
 
+# ============================================================
+# ENDPOINT → Login
+# ============================================================
 
-# ----------------------------
-# Endpoint: login
-# ----------------------------
 @app.post("/login")
-def login_usuario(data: LoginModel):
-    """Login: verifica correo y contraseña. Devuelve nombre y correo si OK."""
+def login(data: LoginModel):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
-    try:
-        cursor.execute("SELECT * FROM usuarios WHERE correo = %s", (data.correo,))
-        user = cursor.fetchone()
-        if not user:
-            raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
-        if not bcrypt.checkpw(data.contrasena.encode("utf-8"), user["contrasena_hash"].encode("utf-8")):
-            raise HTTPException(status_code=401, detail="Contraseña incorrecta")
+    cursor.execute("SELECT * FROM usuarios WHERE correo = %s", (data.correo,))
+    usr = cursor.fetchone()
 
-        # Retornamos datos básicos (no el hash)
-        return {"nombre": user["nombre"], "correo": user["correo"], "pokemon_favorito": user.get("pokemon_favorito")}
-    except Error as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
-        cursor.close()
-        conn.close()
+    cursor.close()
+    conn.close()
 
+    if not usr:
+        raise HTTPException(404, "Usuario no encontrado")
 
-# ----------------------------
-# Endpoint: guardar favorito
-# ----------------------------
+    if not bcrypt.checkpw(data.contrasena.encode(), usr["contrasena_hash"].encode()):
+        raise HTTPException(401, "Contraseña incorrecta")
+
+    # DEVOLVER EL ROL
+    return {
+        "nombre": usr["nombre"],
+        "correo": usr["correo"],
+        "pokemon_favorito": usr.get("pokemon_favorito"),
+        "rol": usr["rol"]
+    }
+
+# ============================================================
+# ENDPOINT → Guardar favorito
+# ============================================================
+
 @app.post("/favorito")
 def guardar_favorito(data: FavoritoModel):
     conn = get_db_connection()
     cursor = conn.cursor()
-    try:
-        cursor.execute("UPDATE usuarios SET pokemon_favorito = %s WHERE correo = %s", (data.pokemon, data.correo))
-        conn.commit()
-        return {"mensaje": f"{data.pokemon} guardado como favorito para {data.correo}"}
-    except Error as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    finally:
+
+    cursor.execute(
+        "UPDATE usuarios SET pokemon_favorito = %s WHERE correo = %s",
+        (data.pokemon, data.correo),
+    )
+    conn.commit()
+
+    cursor.close()
+    conn.close()
+
+    return {"mensaje": "Favorito actualizado"}
+
+
+# ============================================================
+# ENDPOINT → Perfil de usuario
+# ============================================================
+@app.get("/perfil/{correo}")
+def perfil(correo: str):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    # Traer info básica del usuario
+    cursor.execute("SELECT nombre, correo, pokemon_favorito FROM usuarios WHERE correo = %s", (correo,))
+    perfil = cursor.fetchone()
+    if not perfil:
         cursor.close()
         conn.close()
-
-
-# ----------------------------
-# Endpoint: perfil
-# ----------------------------
-@app.get("/perfil/{correo}")
-def obtener_perfil(correo: str):
+        raise HTTPException(404, "Usuario no encontrado")
+    # Si NO tiene favorito → devolver perfil normal
+    if not perfil["pokemon_favorito"]:
+        cursor.close()
+        conn.close()
+        return {
+            "nombre": perfil["nombre"],
+            "correo": perfil["correo"],
+            "pokemon_favorito": None
+        }
+    # Buscar el Pokémon en la tabla
+    cursor.execute("SELECT id, name, image, types FROM pokemons WHERE name = %s",
+                (perfil["pokemon_favorito"],))
+    poke = cursor.fetchone()
+    cursor.close()
+    conn.close()
+    # Si por alguna razón no existe en BD, enviar solo el nombre
+    if not poke:
+        return {
+            "nombre": perfil["nombre"],
+            "correo": perfil["correo"],
+            "pokemon_favorito": {
+                "nombre": perfil["pokemon_favorito"],
+                "imagen": None
+            }
+        }
+    return {
+        "nombre": perfil["nombre"],
+        "correo": perfil["correo"],
+        "pokemon_favorito": {
+            "nombre": poke["name"],
+            "imagen": poke["image"],
+            "types": poke["types"],
+            "id": poke["id"]
+        }
+    }
+# ============================
+# GET → Lista de usuarios
+# ============================
+@app.get("/admin/usuarios")
+def obtener_usuarios():
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     try:
-        cursor.execute("SELECT nombre, correo, pokemon_favorito FROM usuarios WHERE correo = %s", (correo,))
-        perfil = cursor.fetchone()
-        if not perfil:
-            raise HTTPException(status_code=404, detail="Usuario no encontrado")
-
-        pokemon_favorito = perfil.get("pokemon_favorito")
-        pokemon_imagen = None
-
-        # Si el usuario tiene un Pokémon favorito, busca su imagen
-        if pokemon_favorito:
-            pokemon_nombre = pokemon_favorito.lower().strip()
-            poke_data = safe_get(f"{POKE_API}/pokemon/{pokemon_nombre}")
-            if poke_data and "sprites" in poke_data:
-                pokemon_imagen = poke_data["sprites"]["other"]["official-artwork"]["front_default"]
-
-        return {
-    "nombre": perfil["nombre"],
-    "correo": perfil["correo"],
-    "pokemon_favorito": {
-        "nombre": pokemon_favorito.capitalize() if pokemon_favorito else None,
-        "imagen": pokemon_imagen
-    }
-}
-
-    except Error as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        cursor.execute("SELECT id, nombre, correo, rol FROM usuarios")
+        usuarios = cursor.fetchall()
+        return usuarios
     finally:
         cursor.close()
         conn.close()
-
-# ----------------------------
-# ⚡ WebSocket con mensajes JSON y guardado en BD
-# ----------------------------
-from typing import List, Dict
-from fastapi import WebSocket, WebSocketDisconnect
-import json
-
-# Lista de clientes conectados (cada uno con su WebSocket y nombre/correo)
-connected_clients: List[Dict] = []
-
-@app.websocket("/ws/{usuario}")
-async def websocket_endpoint(websocket: WebSocket, usuario: str):
-    """
-    WebSocket que maneja:
-      💬 Chat en tiempo real
-      🗺️ Actualización de ubicaciones (para el mapa)
-    Cada usuario se identifica con su nombre o correo en la URL.
-    Ejemplo: ws://127.0.0.1:8000/ws/ash@pokedex.com
-    """
-    await websocket.accept()
-    connected_clients.append({"socket": websocket, "usuario": usuario})
-    print(f"⚡ Usuario conectado: {usuario}")
-
-    # Enviar mensaje de bienvenida
-    await websocket.send_json({
-        "user": "Sistema",
-        "text": f"Bienvenido {usuario}! 🧢"
-    })
-
+# ======================================
+# PUT → Cambiar rol de un usuario
+# ======================================
+from pydantic import BaseModel
+class RolUpdate(BaseModel):
+    rol: str  # "admin" o "user"
+@app.put("/admin/usuarios/{usuario_id}/rol")
+def cambiar_rol(usuario_id: int, data: RolUpdate):
+    if data.rol not in ["admin", "user"]:
+        raise HTTPException(400, "Rol inválido")
+    conn = get_db_connection()
+    cursor = conn.cursor()
     try:
-        while True:
-            # Recibir mensaje del cliente (texto o JSON)
-            raw_data = await websocket.receive_text()
-
-            try:
-                data = json.loads(raw_data)  # Intentar decodificar JSON
-            except json.JSONDecodeError:
-                # Si no es JSON, lo tratamos como texto plano (chat)
-                data = {"text": raw_data}
-
-            # --- 📍 Si es un mensaje de ubicación (mapa) ---
-            if data.get("tipo") == "ubicacion":
-                lat = data.get("lat")
-                lng = data.get("lng")
-
-                # Validar que haya coordenadas
-                if lat is not None and lng is not None:
-                    print(f"📍 {usuario} envió ubicación: {lat}, {lng}")
-
-                    # Reenviar la ubicación a todos los conectados
-                    for client in connected_clients:
-                        await client["socket"].send_text(json.dumps({
-                            "tipo": "ubicacion",
-                            "usuario": usuario,
-                            "lat": lat,
-                            "lng": lng
-                        }))
-                continue  # No guardar ubicaciones en la base de datos
-
-            # --- 💬 Si es un mensaje de chat normal ---
-            mensaje_texto = data.get("text", "").strip()
-            if not mensaje_texto:
-                continue
-
-            print(f"📨 {usuario}: {mensaje_texto}")
-
-            # Guardar mensaje en la base de datos
-            try:
-                conn = get_db_connection()
-                cursor = conn.cursor()
-                cursor.execute(
-                    "INSERT INTO mensajes (usuario, contenido) VALUES (%s, %s)",
-                    (usuario, mensaje_texto),
-                )
-                conn.commit()
-                cursor.close()
-                conn.close()
-            except Exception as db_err:
-                print(f"⚠️ Error al guardar mensaje en la BD: {db_err}")
-
-            # Reenviar mensaje a todos los conectados
-            for client in connected_clients:
-                await client["socket"].send_json({
-                    "usuario": usuario,
-                    "texto": mensaje_texto
-                })
-
-    except WebSocketDisconnect:
-        print(f"❌ Usuario desconectado: {usuario}")
-        connected_clients[:] = [
-            c for c in connected_clients if c["socket"] != websocket
-        ]
-
-    except Exception as e:
-        print(f"⚠️ Error en WebSocket ({usuario}): {e}")
-        connected_clients[:] = [
-            c for c in connected_clients if c["socket"] != websocket
-        ]
-# ----------------------------
-# Fin del archivo
+        cursor.execute("UPDATE usuarios SET rol = %s WHERE id = %s", (data.rol, usuario_id))
+        conn.commit()
+        return {"mensaje": "Rol actualizado correctamente"}
+    finally:
+        cursor.close()
+        conn.close()
+# ============================
+# DELETE → Eliminar usuario
+# ============================
+@app.delete("/admin/usuarios/{usuario_id}")
+def eliminar_usuario(usuario_id: int):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("DELETE FROM usuarios WHERE id = %s", (usuario_id,))
+        conn.commit()
+        return {"mensaje": "Usuario eliminado"}
+    finally:
+        cursor.close()
+        conn.close()

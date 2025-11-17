@@ -1,38 +1,100 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Pokédex Navia y Aldana - Kanto</title>
-  <link rel="stylesheet" href="css/styles.css">
+    <meta charset="UTF-8" />
+
+    <!-- Responsive -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Pokédex Navia & Aldana - Región Kanto</title>
+
+    <!-- Estilos generales -->
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-  <!-- === Header con navegación y botones === -->
-  <header>
-    <div class="nav-links">
-      <h1>Pokédex Navia y Aldana - Kanto (1–151)</h1>
-    </div>
-    <div class="user-buttons">
-      <button class="boton" onclick="window.location.href='login.html'">Iniciar sesión</button>
-      <button class="boton" onclick="window.location.href='login.html'">Registrarse</button>
-      <button class="boton" onclick="window.location.href='perfil.html'">Perfil</button>
-    </div>
-  </header>
 
-  <!-- === Controles de búsqueda === -->
-  <main>
-    <div class="controls">
-          <input id="searchInput" placeholder="Buscar por nombre (ej. pikachu)">
-      <button id="searchBtn">Buscar</button>
-      <button id="resetBtn">Mostrar todos</button>
-      <button class="boton" onclick="window.location.href='mapa.html'">Ver Mapa</button>
+    <!-- =====================================================
+         ENCABEZADO PRINCIPAL
+         Contiene el título de la Pokédex y los botones
+         de navegación relacionados con el usuario.
+    ====================================================== -->
+    <header class="header">
+        <h1 class="titulo">Pokédex Navia & Aldana – Kanto (1–151)</h1>
 
-    </div>
+        <!-- Estos botones serán ocultados o mostrados según la sesión -->
+        <nav class="user-buttons">
+            <button class="boton btn-login">Iniciar sesión</button>
+            <button class="boton btn-register">Registrarse</button>
+            <button class="boton btn-profile">Perfil</button>
+        </nav>
+    </header>
 
-    <!-- === Contenedor del catálogo de Pokémon === -->
-    <section id="pokemonContainer" class="pokemon-container"></section>
-  </main>
+    <!-- =====================================================
+         CONTROLES DE BÚSQUEDA
+         Permiten filtrar Pokémon por nombre usando script.js
+    ====================================================== -->
+    <main>
+        <section class="controls">
+            <input id="searchInput" 
+                   placeholder="Buscar por nombre (ej. Pikachu)">
+            
+            <button id="searchBtn">Buscar</button>
+            <button id="resetBtn">Mostrar todos</button>
+        </section>
 
-  <script src="js/script.js"></script>
+        <!-- =====================================================
+             CATÁLOGO DE POKÉMON
+             Se llena dinámicamente mediante script.js
+        ====================================================== -->
+        <section id="pokemonContainer" class="pokemon-container"></section>
+    </main>
+
+    <!-- =====================================================
+         SCRIPT PRINCIPAL DEL CATÁLOGO
+    ====================================================== -->
+    <script>
+        // ============================================
+        // 🔐 Manejar visibilidad de botones según login
+        // ============================================
+
+        const nombre = localStorage.getItem("nombre");
+        const correo = localStorage.getItem("correo");
+
+        const btnLogin = document.querySelector(".btn-login");
+        const btnRegister = document.querySelector(".btn-register");
+        const btnProfile = document.querySelector(".btn-profile");
+
+        if (nombre && correo) {
+            // Si hay sesión → ocultar login/registro
+            btnLogin.style.display = "none";
+            btnRegister.style.display = "none";
+
+            // Perfil visible
+            btnProfile.style.display = "inline-block";
+
+            btnProfile.addEventListener("click", () => {
+                window.location.href = "perfil.html";
+            });
+
+        } else {
+            // Sin sesión → mostrar login y registro
+            btnLogin.style.display = "inline-block";
+            btnRegister.style.display = "inline-block";
+
+            btnProfile.style.display = "none";
+
+            btnLogin.addEventListener("click", () => {
+                window.location.href = "login.html";
+            });
+
+            btnRegister.addEventListener("click", () => {
+                window.location.href = "login.html";
+            });
+        }
+    </script>
+
+    <!-- Script de catálogo -->
+    <script src="js/script.js"></script>
+
 </body>
 </html>
