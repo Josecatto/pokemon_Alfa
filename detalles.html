@@ -1,15 +1,43 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Detalles Pokémon</title>
-  <link rel="stylesheet" href="css/styles.css">
+    <meta charset="UTF-8" />
+
+    <!-- Hacer la página responsive -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Detalles del Pokémon</title>
+
+    <!-- Estilos generales del proyecto -->
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-  <button onclick="window.history.back()">⬅ Volver</button>
-  <main id="detalleContainer" class="detalle-container"></main>
 
-  <script src="js/detalle.js"></script>
+    <!-- =====================================================
+         BOTÓN VOLVER
+         Permite regresar al catálogo anterior.
+    ====================================================== -->
+    <button class="btn-volver" onclick="window.history.back()">
+        ⬅ Volver al catálogo
+    </button>
+
+    <!-- =====================================================
+         CONTENEDOR PRINCIPAL DE LA INFORMACIÓN DEL POKÉMON
+         Aquí detalle.js insertará dinámicamente:
+           - Imagen
+           - Tipos
+           - Altura / peso
+           - Habilidades
+           - Descripción IA
+           - Botón favorito
+    ====================================================== -->
+    <main id="detalleContainer" class="detalle-container">
+        <!-- Contenido generado dinámicamente -->
+    </main>
+
+    <!-- =====================================================
+         SCRIPT PRINCIPAL PARA CARGAR LOS DATOS DEL POKÉMON
+    ====================================================== -->
+    <script src="js/detalle.js"></script>
 </body>
 </html>

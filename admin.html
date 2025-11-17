@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Pokédex</title>
+
+    <!-- Tu hoja de estilos -->
+    <link rel="stylesheet" href="css/styles.css">
+
+</head>
+<body class="auth-page">
+
+<div class="auth-wrapper">
+
+    <div class="auth-box" style="max-width: 900px;">
+
+        <h1>Panel de Administración</h1>
+        <p class="hint" style="text-align:center;">
+            Bienvenido, administrador. Desde aquí puedes gestionar usuarios 
+            y próximamente editar el catálogo.
+        </p>
+
+<!-- ======================================================
+SECCIÓN: GESTIÓN DE USUARIOS
+====================================================== -->
+        <section class="form-section">
+            <h2>Gestión de Usuarios</h2>
+
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Correo</th>
+                        <th>Rol</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+
+                <tbody id="usuarios_table_body">
+                    <!-- admin.js cargará los usuarios aquí -->
+                </tbody>
+            </table>
+        </section>
+
+<!-- ======================================================
+BOTÓN DE VOLVER
+====================================================== -->
+        <p class="footer-link">
+            <a href="index.html">Volver al catálogo</a>
+        </p>
+
+    </div>
+
+</div>
+
+<script src="js/admin.js"></script>
+
+</body>
+</html>

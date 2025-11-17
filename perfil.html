@@ -1,40 +1,57 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mi Perfil - Pokédex Navia y Aldana</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <!-- Estilos -->
-  <link rel="stylesheet" href="css/styles.css">
-  <script src="https://kit.fontawesome.com/a2d9b2d6c4.js" crossorigin="anonymous"></script>
+    <title>Mi Perfil - Pokédex Navia y Aldana</title>
+
+    <!-- Estilos generales -->
+    <link rel="stylesheet" href="css/styles.css">
+
+    <!-- Iconos (FontAwesome) -->
+    <script src="https://kit.fontawesome.com/a2d9b2d6c4.js" crossorigin="anonymous"></script>
 </head>
 
 <body class="profile-page">
-  <header>
-    <h1>Mi Perfil</h1>
-  </header>
+  
+<!-- ======================================================
+ENCABEZADO
+======================================================= -->
+    <header class="perfil-header">
+        <h1>Mi Perfil</h1>
+    </header>
 
-  <nav class="perfil-nav">
-     <button class="boton" onclick="window.location.href='mapa.html'">Ver Mapa</button>
-    <a href="index.html" class="btn">Catálogo</a>
-    <a href="chat.html" class="btn">Chat Pokémon</a>
-  </nav>
+    <!-- ======================================================
+NAVEGACIÓN DEL PERFIL
+    ======================================================= -->
+    <nav class="perfil-nav">
+        <a href="index.html" class="btn">Catálogo</a>
+        <a href="login.html" class="btn">Cerrar sesión</a>
+        <!-- El botón de logout REAL lo maneja perfil.js -->
+    </nav>
 
-  <main class="profile-container">
-    
-    <section id="perfilContainer" class="perfil-section">
-      
-      <p>Cargando perfil...</p>
-    </section>
-    
-  </main>
+    <!-- ======================================================
+CONTENIDO PRINCIPAL DEL PERFIL
+    ======================================================= -->
+    <main class="profile-container">
 
-  <footer>
-    <p>Pokédex Navia y Aldana © 2025</p>
-  </footer>
+        <!-- Aquí se renderizan los datos del usuario -->
+        <section id="perfilContainer" class="perfil-section">
+            <p>Cargando perfil...</p>
+        </section>
 
-  <!-- Script principal del perfil -->
-  <script src="js/perfil.js"></script>
+    </main>
+
+<!-- ======================================================
+PIE DE PÁGINA
+======================================================= -->
+    <footer>
+        <p>Pokédex Navia y Aldana © 2025</p>
+    </footer>
+
+    <!-- Script que gestiona los datos del usuario -->
+    <script src="js/perfil.js"></script>
+
 </body>
 </html>

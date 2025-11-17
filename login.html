@@ -1,54 +1,87 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Login / Registro - Pokédex Catto</title>
-  <link rel="stylesheet" href="css/styles.css">
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    
+    <title>Login / Registro - Pokédex Catto</title>
+
+    <!-- Estilos generales -->
+    <link rel="stylesheet" href="css/styles.css">
 </head>
+
 <body class="auth-page">
-  <div class="auth-wrapper">
+
+<div class="auth-wrapper">
+
     <div class="auth-box">
-      <h1>Pokédex Navia y Aldana</h1>
 
-      <!-- REGISTRO -->
-      <section class="form-section">
-        <h2>Registro</h2>
-        <div class="input-group">
-          <label for="nombre">Nombre</label>
-          <input id="nombre" type="text" placeholder="Ingresa tu nombre" required>
-        </div>
-        <div class="input-group">
-          <label for="correo_reg">Correo</label>
-          <input id="correo_reg" type="email" placeholder="tucorreo@ejemplo.com" required>
-        </div>
-        <div class="input-group">
-          <label for="contrasena_reg">Contraseña</label>
-          <input id="contrasena_reg" type="password" placeholder="••••••••" required>
-        </div>
-        <button id="reg_btn">Registrar</button>
-      </section>
+        <h1>Pokédex Navia y Aldana</h1>
 
-      <!-- INICIAR SESIÓN -->
-      <section class="form-section">
-        <h2>Iniciar Sesión</h2>
-        <div class="input-group">
-          <label for="correo">Correo</label>
-          <input id="correo" type="email" placeholder="tucorreo@ejemplo.com" required>
-        </div>
-        <div class="input-group">
-          <label for="contrasena">Contraseña</label>
-          <input id="contrasena" type="password" placeholder="••••••••" required>
-        </div>
-        <button id="log_btn">Entrar</button>
-      </section>
+<!-- ======================================================
+FORMULARIO DE REGISTRO
+Cumple con validación visual + conexión con auth.js
+======================================================= -->
+        <section class="form-section">
+            <h2>Registro</h2>
+            <div class="input-group">
+                <label for="nombre_reg">Nombre</label>
+                <input id="nombre_reg" type="text" placeholder="Ingresa tu nombre" required>
+            </div>
+            <div class="input-group">
+                <label for="correo_reg">Correo</label>
+                <input id="correo_reg" type="email" placeholder="tucorreo@ejemplo.com" required>
+            </div>
+            <div class="input-group">
+                <label for="contrasena_reg">Contraseña</label>
+                <input id="contrasena_reg" type="password" placeholder="••••••••" required>
+                <small class="hint">
+                    La contraseña debe incluir:  
+                    • 8 caracteres mínimo  
+                    • Mayúscula  
+                    • Minúscula  
+                    • Número  
+                    • Símbolo
+                </small>
+            </div>
+            <button id="reg_btn" type="button">Registrar</button>
+        </section>
 
-      <p class="footer-link">¿No tienes cuenta? <a href="index.html">Volver al catálogo</a><br>
-        <small>© 2025 Pokédex Navia y Elkin</small>
-      </p>
-    </div>
-  </div>
+<!-- ======================================================
+FORMULARIO DE LOGIN
+======================================================= -->
+        <section class="form-section">
+            <h2>Iniciar Sesión</h2>
 
-  <script src="js/auth.js"></script>
+            <div class="input-group">
+                <label for="correo">Correo</label>
+                <input id="correo" type="email" placeholder="tucorreo@ejemplo.com" required>
+            </div>
+
+            <div class="input-group">
+                <label for="contrasena">Contraseña</label>
+                <input id="contrasena" type="password" placeholder="••••••••" required>
+            </div>
+
+            <button id="log_btn">Entrar</button>
+        </section>
+
+<!-- ======================================================
+ENLACE DE RETORNO
+======================================================= -->
+        <p class="footer-link">
+            ¿Deseas volver?  
+            <a href="index.html">Ir al catálogo</a>
+            <br><br>
+            <small>© 2025 Pokédex Navia y Aldana</small>
+        </p>
+
+    </div><!-- auth-box -->
+
+</div><!-- auth-wrapper -->
+
+<!-- Script que maneja registro/login -->
+<script src="js/auth.js"></script>
+
 </body>
 </html>
